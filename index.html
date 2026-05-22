@@ -379,7 +379,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
       </div>
       <button class="save-settings-btn" onclick="saveSettings()">SAVE SETTINGS</button>
       <div style="margin-top:20px;padding:12px;background:var(--bg2);border-radius:8px;font-size:11px;color:var(--text3);line-height:1.7">
-        ⚠️ <strong style="color:var(--yellow)">Soviet System Rule:</strong> Do NOT change maxes mid-cycle. Use the same maxes for the entire 12-week macrocycle. Only update after completing the full cycle.
+        ⚠️ <strong style="color:var(--yellow)">Soviet System Rule:</strong> Do NOT change maxes mid-cycle. Use the same maxes for the entire 12-week macrocycle. Only update after completing the full program.
       </div>
       <div class="scroll-pad"></div>
     </div>
@@ -389,9 +389,9 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 <div id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 // PROGRAM DATA — 12-Week 3-Day Soviet System
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 const PROGRAM = [
   // ── WEEK 1 ── Macrocycle I | Mesocycle I | Microcycle I
   {phase:'Macrocycle I · Mesocycle I · Microcycle I', days:[
@@ -612,9 +612,52 @@ const PROGRAM = [
   ]},
 ];
 
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
+// LOCALSTORAGE SUPPORT DETECTION & FALLBACK
+// ════════════════════════════════════════════════════════════════════════
+let storageAvailable = (function() {
+  try {
+    const test = '__storage_test__';
+    window.localStorage.setItem(test, test);
+    window.localStorage.removeItem(test);
+    return true;
+  } catch (e) {
+    return false;
+  }
+})();
+
+// Fallback in-memory storage for when localStorage is unavailable
+let memoryStore = {};
+
+function safeSaveData(key, value) {
+  try {
+    if (storageAvailable) {
+      window.localStorage.setItem(key, value);
+    } else {
+      memoryStore[key] = value;
+    }
+  } catch (e) {
+    // If quota exceeded or other error, use memory
+    memoryStore[key] = value;
+    toast('⚠️ Storage limited - data saved to memory');
+  }
+}
+
+function safeLoadData(key) {
+  try {
+    if (storageAvailable) {
+      return window.localStorage.getItem(key);
+    } else {
+      return memoryStore[key] || null;
+    }
+  } catch (e) {
+    return memoryStore[key] || null;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════
 // HELPER UTILITIES (Added for Mobile Support)
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 
 // Safely parse YYYY-MM-DD for iOS Safari
 function parseDate(str) {
@@ -633,9 +676,32 @@ function getLocalDateStr() {
   return d.toISOString().slice(0,10);
 }
 
-// ═══════════════════════════════════════════════════════════════════
+// Update competition countdown in header
+function updateCountdown() {
+  const daysLeft = document.getElementById('days-left');
+  if (!cfg || !cfg.comp) {
+    daysLeft.textContent = '—';
+    return;
+  }
+  const compDate = parseDate(cfg.comp);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  compDate.setHours(0, 0, 0, 0);
+  const diff = Math.ceil((compDate - today) / (1000 * 60 * 60 * 24));
+  daysLeft.textContent = Math.max(0, diff);
+}
+
+// Toast notification
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ════════════════════════════════════════════════════════════════════════
 // STATE & CONFIG
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 let cfg = loadConfig();
 let selectedWeek = 1;
 let selectedDay = null;
@@ -651,29 +717,33 @@ function calcKg(maxKg, pct) {
   return Math.max(20, Math.round(raw / 2.5) * 2.5);
 }
 
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 // STORAGE
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 function loadConfig() {
-  const d = JSON.parse(localStorage.getItem('cfg') || '{}');
+  const d = JSON.parse(safeLoadData('cfg') || '{}');
   return {
     snatch: d.snatch||80, cnj: d.cnj||100, bsq: d.bsq||130,
     fsq: d.fsq||115, spull: d.spull||100, cpull: d.cpull||120,
     comp: d.comp||'2026-07-30'
   };
 }
-function saveConfig(c) { localStorage.setItem('cfg', JSON.stringify(c)); }
+function saveConfig(c) { 
+  safeSaveData('cfg', JSON.stringify(c)); 
+  cfg = c;
+  updateCountdown();
+}
 
 function getSessionKey(w,d) { return `sess_w${w}_d${d}`; }
-function loadSession(w,d) { return JSON.parse(localStorage.getItem(getSessionKey(w,d))||'null'); }
-function saveSessionData(w,d,data) { localStorage.setItem(getSessionKey(w,d), JSON.stringify(data)); }
+function loadSession(w,d) { return JSON.parse(safeLoadData(getSessionKey(w,d))||'null'); }
+function saveSessionData(w,d,data) { safeSaveData(getSessionKey(w,d), JSON.stringify(data)); }
 
-function getBodyweightLog() { return JSON.parse(localStorage.getItem('bwlog')||'[]'); }
-function saveBodyweightLog(log) { localStorage.setItem('bwlog', JSON.stringify(log)); }
+function getBodyweightLog() { return JSON.parse(safeLoadData('bwlog')||'[]'); }
+function saveBodyweightLog(log) { safeSaveData('bwlog', JSON.stringify(log)); }
 
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 // NAVIGATION
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 function showView(v) {
   currentView = v;
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
@@ -687,9 +757,9 @@ function showView(v) {
   if(v==='session') renderSession();
 }
 
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 // HOME VIEW
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 function renderHome() {
   const grid = document.getElementById('week-grid');
   grid.innerHTML = '';
@@ -698,7 +768,7 @@ function renderHome() {
     const done = [1,2,3].every(d=>loadSession(w,d)?.complete);
     const card = document.createElement('div');
     card.className = `week-card${w===selectedWeek?' current':''}${done?' done':''}`;
-    card.innerHTML = `<div class="wk-num">W${w}</div><div class="wk-phase">${phases[w-1]}</div><div class="wk-days">${[1,2,3].map(d=>{const s=loadSession(w,d);return s?.complete?'✓':'○';}).join(' ')}</div>`;
+    card.innerHTML = `<div class="wk-num">W${w}</div><div class="wk-phase">${phases[w-1]}</div><div class="wk-days">${[1,2,3].map(d=>{const s=loadSession(w,d);return s?.complete?'✓':'○';}).join(' ')} </div>`;
     card.onclick = () => { selectedWeek=w; selectedDay=null; renderHome(); };
     grid.appendChild(card);
   }
@@ -721,9 +791,9 @@ function startSession() {
   showView('session');
 }
 
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 // SESSION VIEW
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 function renderSession() {
   if(!selectedWeek || !selectedDay) {
     document.getElementById('exercises-container').innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Go to HOME and select a week and day first.</div></div>';
@@ -839,9 +909,9 @@ function finishSession() {
   setTimeout(()=>showView('home'), 800);
 }
 
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 // BODYWEIGHT VIEW
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 function renderBodyweight() {
   const log = getBodyweightLog();
   const logEl = document.getElementById('bw-log');
@@ -885,9 +955,9 @@ function deleteBodyweight(i) {
   renderBodyweight();
 }
 
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 // REPORT VIEW
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 let reportWeek = 1;
 
 function renderReport() {
@@ -941,7 +1011,7 @@ function generateReport(w) {
   const missRate = totalAttempts>0?Math.round(totalFail/totalAttempts*100):0;
 
   if(missRate>10) {
-    html += `<div class="miss-alert"><strong>⚠️ HIGH MISS RATE — ${missRate}% missed</strong>Per Soviet system: if missing &gt;10% of lifts, first lower intensity by a few percent before touching volume. Review technique and recovery.</div>`;
+    html += `<div class="miss-alert"><strong>⚠️ HIGH MISS RATE — ${missRate}% missed</strong>Per Soviet system: if missing >10% of lifts, lower intensity by a few % next week.</div>`;
   }
 
   html += `<div class="report-card">
@@ -1002,22 +1072,12 @@ function generateReport(w) {
     </div>`;
   }
 
-  html += `<div class="report-card">
-    <div class="report-title">COACH NOTES</div>
-    <div style="font-size:12px;color:var(--text2);line-height:1.8">
-      ${overallRate>=90?'✅ Excellent success rate. Maintain current loading.':''}
-      ${overallRate>=80&&overallRate<90?'⚠️ Good but below 90%. Monitor recovery and technique.':''}
-      ${overallRate<80?'🔴 Miss rate too high. Drop intensity 5% before dropping volume.':''}
-      <br>💡 <em>"Always lower intensity before lowering volume." — Soviet System</em>
-    </div>
-  </div>`;
-
   content.innerHTML = html;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// SETTINGS
-// ═══════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
+// SETTINGS VIEW
+// ════════════════════════════════════════════════════════════════════════
 function renderSettings() {
   document.getElementById('set-snatch').value = cfg.snatch;
   document.getElementById('set-cnj').value = cfg.cnj;
@@ -1029,57 +1089,28 @@ function renderSettings() {
 }
 
 function saveSettings() {
-  cfg = {
-    snatch: parseFloat(document.getElementById('set-snatch').value)||80,
-    cnj:    parseFloat(document.getElementById('set-cnj').value)||100,
-    bsq:    parseFloat(document.getElementById('set-bsq').value)||130,
-    fsq:    parseFloat(document.getElementById('set-fsq').value)||115,
-    spull:  parseFloat(document.getElementById('set-spull').value)||100,
-    cpull:  parseFloat(document.getElementById('set-cpull').value)||120,
-    comp:   document.getElementById('set-comp').value||'2026-07-30',
+  const newCfg = {
+    snatch: parseInt(document.getElementById('set-snatch').value) || 80,
+    cnj: parseInt(document.getElementById('set-cnj').value) || 100,
+    bsq: parseInt(document.getElementById('set-bsq').value) || 130,
+    fsq: parseInt(document.getElementById('set-fsq').value) || 115,
+    spull: parseInt(document.getElementById('set-spull').value) || 100,
+    cpull: parseInt(document.getElementById('set-cpull').value) || 120,
+    comp: document.getElementById('set-comp').value || '2026-07-30'
   };
-  saveConfig(cfg);
-  updateCountdown();
-  toast('Settings saved!');
+  saveConfig(newCfg);
+  toast('✓ Settings saved!');
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// COUNTDOWN
-// ═══════════════════════════════════════════════════════════════════
-function updateCountdown() {
-  const comp = parseDate(cfg.comp);
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  comp.setHours(0,0,0,0);
-  const diff = Math.ceil((comp-today)/(1000*60*60*24));
-  document.getElementById('days-left').textContent = diff>0?diff:'0';
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// TOAST
-// ═══════════════════════════════════════════════════════════════════
-let toastTimer;
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════════════
-function init() {
-  cfg = loadConfig();
+// ════════════════════════════════════════════════════════════════════════
+// INITIALIZATION
+// ════════════════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', function() {
   updateCountdown();
   renderHome();
-  if('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
-  }
-}
-
-init();
+  // Update countdown every minute
+  setInterval(updateCountdown, 60000);
+});
 </script>
 </body>
 </html>
