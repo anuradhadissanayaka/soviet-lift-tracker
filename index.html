@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SovietLift">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="manifest" href="./manifest.json">
+<title>Soviet Lifting Tracker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=Barlow:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #0a0a0a;
+  --bg2: #141414;
+  --bg3: #1e1e1e;
+  --red: #cc0000;
+  --red2: #ff2222;
+  --green: #22cc55;
+  --green2: #44ff77;
+  --yellow: #ffcc00;
+  --text: #f0f0f0;
+  --text2: #aaa;
+  --text3: #666;
+  --border: #2a2a2a;
+  --font-head: 'Bebas Neue', 'Impact', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-body: 'Barlow', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-body); }
+
+#app { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+
+/* ── HEADER ── */
+#header {
+  background: var(--bg2);
+  border-bottom: 2px solid var(--red);
+  padding: 10px 16px 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#header h1 { font-family: var(--font-head); font-size: 22px; letter-spacing: 2px; color: var(--red); }
+#countdown { font-family: var(--font-mono); font-size: 11px; color: var(--yellow); text-align: right; line-height: 1.4; }
+#countdown span { display: block; font-size: 18px; font-weight: 600; }
+
+/* ── NAV ── */
+#nav {
+  display: flex;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.nav-btn {
+  flex: 1; padding: 10px 4px 8px; border: none; background: none; color: var(--text2);
+  font-family: var(--font-body); font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+  text-transform: uppercase; cursor: pointer; transition: all 0.15s;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.nav-btn .nav-icon { font-size: 18px; }
+.nav-btn.active { color: var(--red); border-bottom-color: var(--red); }
+.nav-btn:active { opacity: 0.7; }
+
+/* ── CONTENT ── */
+#content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* ── VIEWS ── */
+.view { display: none; padding: 16px; }
+.view.active { display: block; }
+
+/* ── HOME VIEW ── */
+.week-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+.week-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 6px; text-align: center; cursor: pointer; transition: all 0.15s;
+  font-family: var(--font-body);
+}
+.week-card:active { transform: scale(0.95); }
+.week-card.current { border-color: var(--red); background: #1a0000; }
+.week-card.done { border-color: var(--green); opacity: 0.6; }
+.week-card .wk-num { font-family: var(--font-head); font-size: 20px; color: var(--red); }
+.week-card.done .wk-num { color: var(--green); }
+.week-card .wk-phase { font-size: 8px; color: var(--text3); letter-spacing: 0.5px; text-transform: uppercase; margin-top: 2px; }
+.week-card .wk-days { font-size: 9px; color: var(--text2); margin-top: 4px; }
+
+.section-title {
+  font-family: var(--font-head); font-size: 18px; letter-spacing: 2px;
+  color: var(--text2); margin-bottom: 12px; border-left: 3px solid var(--red);
+  padding-left: 10px;
+}
+
+.day-btns { display: flex; gap: 8px; margin-bottom: 20px; }
+.day-btn {
+  flex: 1; padding: 14px 8px; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: var(--font-head); font-size: 24px;
+  letter-spacing: 2px; cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.day-btn.selected { background: var(--red); border-color: var(--red); color: #fff; }
+.day-btn.done { border-color: var(--green); color: var(--green); }
+.day-btn:active { transform: scale(0.95); }
+.day-sub { font-family: var(--font-body); font-size: 9px; color: var(--text3); margin-top: 2px; }
+
+.start-btn {
+  width: 100%; padding: 16px; background: var(--red); border: none; border-radius: 8px;
+  color: #fff; font-family: var(--font-head); font-size: 22px; letter-spacing: 3px;
+  cursor: pointer; transition: all 0.15s; margin-top: 8px;
+}
+.start-btn:active { transform: scale(0.98); background: var(--red2); }
+.start-btn:disabled { background: var(--bg3); color: var(--text3); cursor: default; }
+
+/* ── SESSION VIEW ── */
+#session-header { margin-bottom: 16px; }
+#session-header .sh-title { font-family: var(--font-head); font-size: 28px; letter-spacing: 3px; color: var(--red); }
+#session-header .sh-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+#session-progress { height: 4px; background: var(--bg3); border-radius: 2px; margin: 8px 0 16px; }
+#session-progress-bar { height: 100%; background: var(--red); border-radius: 2px; transition: width 0.3s; }
+
+.exercise-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: 14px; overflow: hidden;
+}
+.ex-header {
+  padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.ex-name { font-size: 14px; font-weight: 700; letter-spacing: 0.3px; }
+.ex-max-badge {
+  font-family: var(--font-mono); font-size: 10px; padding: 2px 8px;
+  background: var(--bg3); border-radius: 20px; color: var(--text2);
+}
+.ex-complex-note { font-size: 10px; color: var(--yellow); padding: 4px 14px 0; }
+
+.set-block { padding: 10px 14px 12px; border-bottom: 1px solid var(--border); }
+.set-block:last-child { border-bottom: none; }
+.set-label {
+  font-family: var(--font-mono); font-size: 11px; color: var(--text3);
+  margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+}
+.set-pct { font-size: 14px; font-weight: 600; color: var(--yellow); }
+.set-weight { font-size: 20px; font-weight: 700; color: var(--text); }
+.set-kg { font-size: 11px; color: var(--text3); }
+.set-info { display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px; }
+.sets-reps { font-size: 12px; color: var(--text2); }
+
+.rep-toggles { display: flex; flex-wrap: wrap; gap: 6px; }
+.rep-toggle {
+  width: 38px; height: 38px; border-radius: 8px; border: 1.5px solid var(--border);
+  background: var(--bg3); color: var(--text3); font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all 0.12s;
+  font-family: var(--font-body); font-weight: 600;
+}
+.rep-toggle.success { background: #0d2e1a; border-color: var(--green); color: var(--green2); }
+.rep-toggle.fail { background: #2e0d0d; border-color: var(--red); color: var(--red2); }
+.rep-toggle:active { transform: scale(0.9); }
+
+.set-separator { width: 100%; height: 1px; background: var(--border); margin: 8px 0; }
+
+.session-done-btn {
+  width: 100%; padding: 16px; margin-top: 8px; background: var(--green);
+  border: none; border-radius: 8px; color: #000; font-family: var(--font-head);
+  font-size: 20px; letter-spacing: 2px; cursor: pointer;
+}
+.session-done-btn:active { transform: scale(0.98); }
+
+/* ── BODYWEIGHT VIEW ── */
+.bw-input-row { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
+.bw-input {
+  flex: 1; padding: 14px 16px; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: var(--font-mono); font-size: 24px;
+  font-weight: 600; text-align: center; -webkit-appearance: none; appearance: none;
+}
+.bw-input:focus { outline: none; border-color: var(--red); }
+.bw-save-btn {
+  padding: 14px 20px; background: var(--red); border: none; border-radius: 8px;
+  color: #fff; font-family: var(--font-head); font-size: 18px; letter-spacing: 1px; cursor: pointer;
+}
+.bw-save-btn:active { transform: scale(0.95); }
+
+.bw-log { }
+.bw-entry {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; background: var(--bg2); border-radius: 8px; margin-bottom: 8px;
+  border: 1px solid var(--border);
+}
+.bw-entry-date { font-size: 12px; color: var(--text2); }
+.bw-entry-weight { font-family: var(--font-mono); font-size: 22px; font-weight: 600; color: var(--yellow); }
+.bw-entry-del { background: none; border: none; color: var(--text3); font-size: 18px; cursor: pointer; padding: 4px 8px; }
+
+/* ── REPORT VIEW ── */
+.report-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; margin-bottom: 14px;
+}
+.report-title { font-family: var(--font-head); font-size: 20px; letter-spacing: 2px; color: var(--red); margin-bottom: 12px; }
+.report-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.report-row:last-child { border-bottom: none; }
+.report-label { font-size: 12px; color: var(--text2); }
+.report-value { font-family: var(--font-mono); font-size: 14px; font-weight: 600; }
+.report-value.good { color: var(--green); }
+.report-value.warn { color: var(--yellow); }
+.report-value.bad { color: var(--red2); }
+
+.miss-alert {
+  background: #2e0d0d; border: 1px solid var(--red); border-radius: 8px;
+  padding: 12px 14px; margin-bottom: 14px; font-size: 12px; color: var(--red2); line-height: 1.6;
+}
+.miss-alert strong { font-size: 14px; display: block; margin-bottom: 4px; }
+
+.week-select-row { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+.week-select-row label { font-size: 12px; color: var(--text2); }
+.report-week-btn {
+  padding: 6px 12px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text); font-size: 12px; cursor: pointer;
+  font-family: var(--font-body);
+}
+.report-week-btn.active { background: var(--red); border-color: var(--red); color: #fff; }
+
+/* ── SETTINGS VIEW ── */
+.settings-section { margin-bottom: 20px; }
+.settings-title { font-family: var(--font-head); font-size: 18px; letter-spacing: 2px; color: var(--red); margin-bottom: 12px; }
+.setting-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; margin-bottom: 8px;
+}
+.setting-label { font-size: 13px; color: var(--text); }
+.setting-sub { font-size: 10px; color: var(--text3); margin-top: 2px; }
+.setting-input {
+  width: 80px; padding: 8px 10px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--yellow); font-family: var(--font-mono); font-size: 16px;
+  font-weight: 600; text-align: center; -webkit-appearance: none;
+}
+.setting-input:focus { outline: none; border-color: var(--red); }
+.save-settings-btn {
+  width: 100%; padding: 14px; background: var(--red); border: none; border-radius: 8px;
+  color: #fff; font-family: var(--font-head); font-size: 20px; letter-spacing: 2px; cursor: pointer;
+}
+
+/* ── MISC ── */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text3); }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-text { font-size: 14px; line-height: 1.6; }
+
+.pill {
+  display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px;
+  font-weight: 600; letter-spacing: 0.5px;
+}
+.pill-red { background: #2e0d0d; color: var(--red2); }
+.pill-green { background: #0d2e1a; color: var(--green2); }
+.pill-yellow { background: #2e2200; color: var(--yellow); }
+
+/* Progress bar for success rate */
+.progress-bar-wrap { background: var(--bg3); border-radius: 4px; height: 8px; overflow: hidden; margin-top: 4px; }
+.progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+.fill-green { background: var(--green); }
+.fill-yellow { background: var(--yellow); }
+.fill-red { background: var(--red2); }
+
+/* Scrollable content spacing */
+.scroll-pad { height: 30px; }
+
+/* Toast */
+#toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 20px; font-size: 13px; color: var(--text); z-index: 999;
+  opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap;
+}
+#toast.show { opacity: 1; }
+
+/* Modal overlay */
+#modal {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  z-index: 100; align-items: flex-end;
+}
+#modal.show { display: flex; }
+#modal-box {
+  width: 100%; max-height: 70vh; overflow-y: auto;
+  background: var(--bg2); border-top: 2px solid var(--red);
+  border-radius: 16px 16px 0 0; padding: 20px 16px 40px;
+}
+#modal-title { font-family: var(--font-head); font-size: 22px; letter-spacing: 2px; color: var(--red); margin-bottom: 16px; }
+
+.about-row { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.about-row:last-child { border-bottom: none; }
+.about-label { color: var(--text2); font-size: 11px; margin-bottom: 2px; }
+
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <h1>⚡ SOVIET LIFT</h1>
+    <div id="countdown">
+      COMPETITION<span id="days-left">—</span>DAYS
+    </div>
+  </div>
+  <div id="nav">
+    <button class="nav-btn active" onclick="showView('home')" id="nav-home">
+      <span class="nav-icon">🏠</span>HOME
+    </button>
+    <button class="nav-btn" onclick="showView('session')" id="nav-session">
+      <span class="nav-icon">🏋️</span>TRAIN
+    </button>
+    <button class="nav-btn" onclick="showView('bodyweight')" id="nav-bodyweight">
+      <span class="nav-icon">⚖️</span>WEIGHT
+    </button>
+    <button class="nav-btn" onclick="showView('report')" id="nav-report">
+      <span class="nav-icon">📊</span>REPORT
+    </button>
+    <button class="nav-btn" onclick="showView('settings')" id="nav-settings">
+      <span class="nav-icon">⚙️</span>SETTINGS
+    </button>
+  </div>
+  <div id="content">
+    <!-- HOME -->
+    <div class="view active" id="view-home">
+      <p class="section-title">SELECT WEEK</p>
+      <div class="week-grid" id="week-grid"></div>
+      <p class="section-title">SELECT DAY</p>
+      <div class="day-btns" id="day-btns">
+        <button class="day-btn" onclick="selectDay(1)" id="day-btn-1">DAY 1<div class="day-sub">POWER / SQUATS</div></button>
+        <button class="day-btn" onclick="selectDay(2)" id="day-btn-2">DAY 2<div class="day-sub">CLASSIC</div></button>
+        <button class="day-btn" onclick="selectDay(3)" id="day-btn-3">DAY 3<div class="day-sub">HEAVY</div></button>
+      </div>
+      <button class="start-btn" id="start-btn" onclick="startSession()" disabled>START SESSION</button>
+      <div class="scroll-pad"></div>
+    </div>
+
+    <!-- SESSION / TRAIN -->
+    <div class="view" id="view-session">
+      <div id="session-header">
+        <div class="sh-title" id="sh-title">WEEK 1 · DAY 1</div>
+        <div class="sh-sub" id="sh-sub">Macrocycle I · Mesocycle I · Microcycle I</div>
+      </div>
+      <div id="session-progress"><div id="session-progress-bar" style="width:0%"></div></div>
+      <div id="exercises-container"></div>
+      <button class="session-done-btn" id="session-done-btn" onclick="finishSession()">✓ MARK SESSION COMPLETE</button>
+      <div class="scroll-pad"></div>
+    </div>
+
+    <!-- BODYWEIGHT -->
+    <div class="view" id="view-bodyweight">
+      <p class="section-title">LOG BODYWEIGHT</p>
+      <div class="bw-input-row">
+        <input class="bw-input" type="number" id="bw-input" placeholder="00.0" step="0.1" min="40" max="200">
+        <button class="bw-save-btn" onclick="saveBodyweight()">LOG</button>
+      </div>
+      <p class="section-title">HISTORY</p>
+      <div id="bw-log"></div>
+      <div class="scroll-pad"></div>
+    </div>
+
+    <!-- REPORT -->
+    <div class="view" id="view-report">
+      <p class="section-title">WEEKLY REPORT</p>
+      <div class="week-select-row" id="report-week-select"></div>
+      <div id="report-content"></div>
+      <div class="scroll-pad"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="view" id="view-settings">
+      <div class="settings-section">
+        <p class="settings-title">YOUR MAXES (1RM)</p>
+        <div class="setting-row">
+          <div><div class="setting-label">Snatch</div><div class="setting-sub">Used for: snatch, power snatch, hang snatch, pull variants</div></div>
+          <input class="setting-input" type="number" id="set-snatch" value="80"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Clean & Jerk</div><div class="setting-sub">Used for: C&J, PC+PJ, jerk behind neck</div></div>
+          <input class="setting-input" type="number" id="set-cnj" value="100"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Back Squat</div></div>
+          <input class="setting-input" type="number" id="set-bsq" value="130"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Front Squat</div></div>
+          <input class="setting-input" type="number" id="set-fsq" value="115"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Snatch Pull</div><div class="setting-sub">Used for all snatch pulls</div></div>
+          <input class="setting-input" type="number" id="set-spull" value="100"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Clean Pull</div><div class="setting-sub">Used for all clean pulls</div></div>
+          <input class="setting-input" type="number" id="set-cpull" value="120"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
+        </div>
+      </div>
+      <div class="settings-section">
+        <p class="settings-title">COMPETITION</p>
+        <div class="setting-row">
+          <div><div class="setting-label">Competition Date</div></div>
+          <input class="setting-input" type="date" id="set-comp" value="2026-07-30" style="width:140px;font-size:12px;">
+        </div>
+      </div>
+      <button class="save-settings-btn" onclick="saveSettings()">SAVE SETTINGS</button>
+      <div style="margin-top:20px;padding:12px;background:var(--bg2);border-radius:8px;font-size:11px;color:var(--text3);line-height:1.7">
+        ⚠️ <strong style="color:var(--yellow)">Soviet System Rule:</strong> Do NOT change maxes mid-cycle. Use the same maxes for the entire 12-week macrocycle. Only update after completing the full cycle.
+      </div>
+      <div class="scroll-pad"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// PROGRAM DATA — 12-Week 3-Day Soviet System
+// Format: [exerciseName, maxKey, [[pct,sets,reps], ...], complexNote?]
+// maxKey: 's'=snatch, 'c'=cnj, 'b'=bsq, 'f'=fsq, 'sp'=spull, 'cp'=cpull, '-'=none
+// ═══════════════════════════════════════════════════════════════════
+const PROGRAM = [
+  // ── WEEK 1 ── Macrocycle I | Mesocycle I | Microcycle I
+  {phase:'Macrocycle I · Mesocycle I · Microcycle I', days:[
+    [
+      {n:'Power Snatch',         k:'s',  b:[[60,2,3],[65,2,3],[70,2,3]]},
+      {n:'P. Clean & P. Jerk',   k:'c',  b:[[65,2,1],[70,2,1],[75,2,1]], cx:'1 Power Clean + 1 Power Jerk per set'},
+      {n:'Back Squat',           k:'b',  b:[[60,2,4],[65,2,4],[70,1,3],[75,1,3],[80,2,3]]},
+      {n:'Snatch Pull',          k:'sp', b:[[80,2,3],[85,2,3]]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[70,1,3],[75,2,3],[80,1,3],[83,1,3]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[65,1,3],[70,1,3],[75,2,3],[80,1,3]]},
+      {n:'Front Squat',          k:'f',  b:[[65,1,5],[70,2,4],[80,2,4]]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[60,1,3],[65,2,3],[70,1,3],[75,2,3],[80,2,3]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[60,1,3],[65,2,3],[70,1,3],[75,2,3],[80,2,3]]},
+      {n:'Back Squat',           k:'b',  b:[[60,2,4],[65,1,4],[70,1,3],[75,2,3],[80,2,2],[85,2,2]]},
+      {n:'Snatch Pull',          k:'sp', b:[[80,2,3],[85,2,3]]},
+      {n:'Ab Work',              k:'-',  b:[]},
+    ]
+  ]},
+  // ── WEEK 2 ── Macrocycle I | Mesocycle I | Microcycle II
+  {phase:'Macrocycle I · Mesocycle I · Microcycle II', days:[
+    [
+      {n:'Power Snatch',         k:'s',  b:[[60,2,3],[65,2,3],[70,1,3],[75,1,3]]},
+      {n:'P. Clean + 3 P. Jerks',k:'c',  b:[[65,2,1],[70,2,1],[75,2,1],[80,2,1]], cx:'1 Power Clean + 3 Power Jerks per set'},
+      {n:'Back Squat',           k:'b',  b:[[60,2,5],[65,2,5],[70,1,4],[75,1,3],[80,2,3]]},
+      {n:'Snatch Pull',          k:'sp', b:[[85,2,3],[90,2,3]]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[60,1,3],[65,1,3],[70,1,3],[75,1,3],[80,1,3]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[60,1,3],[65,1,3],[70,1,3],[80,1,3]]},
+      {n:'Back Squat',           k:'b',  b:[[70,2,4],[75,2,4],[80,1,4],[85,2,3]]},
+      {n:'Snatch Pull',          k:'sp', b:[[85,2,3],[90,2,3]]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[60,1,3],[65,2,3],[70,1,3],[75,1,3],[80,1,3],[85,1,2]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[55,1,3],[60,1,3],[65,1,3],[70,1,3],[75,1,3],[80,1,3],[85,1,2]]},
+      {n:'Back Squat',           k:'b',  b:[[55,1,5],[60,1,5],[65,1,5],[70,1,5],[75,1,4],[80,1,5]]},
+    ]
+  ]},
+  // ── WEEK 3 ── Macrocycle I | Mesocycle I | Microcycle III
+  {phase:'Macrocycle I · Mesocycle I · Microcycle III', days:[
+    [
+      {n:'Power Snatch',         k:'s',  b:[[60,2,3],[65,1,3],[70,1,3],[75,1,3],[80,2,3]]},
+      {n:'P. Clean + P. Jerk',   k:'c',  b:[[65,2,1],[70,2,1],[75,2,1],[80,2,1]], cx:'1 Power Clean + 1 Power Jerk per set'},
+      {n:'Back Squat',           k:'b',  b:[[60,3,5],[65,2,5],[70,1,3],[75,1,4],[80,2,3]]},
+      {n:'Snatch Pull',          k:'sp', b:[[85,2,3],[90,2,3]]},
+    ],[
+      {n:'P. Snatch Below Knee', k:'s',  b:[[50,2,3],[55,1,3],[60,1,3],[70,1,3],[75,2,3]]},
+      {n:'P. Clean + P. Jerk',   k:'c',  b:[[65,2,1],[70,2,1],[75,2,1],[80,2,1]], cx:'1 Power Clean + 1 Power Jerk per set'},
+      {n:'Back Squat',           k:'b',  b:[[60,2,5],[65,2,5],[70,1,4],[75,1,3],[80,1,3]]},
+      {n:'Snatch Pull',          k:'sp', b:[[85,2,3],[90,2,3]]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[65,1,3],[70,2,3],[75,1,3],[80,1,3],[85,1,3],[90,1,2]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[55,1,3],[60,1,3],[65,1,3],[70,1,3],[75,1,3],[80,1,3],[85,1,3],[90,1,2]]},
+      {n:'Back Squat',           k:'b',  b:[[50,1,5],[55,1,4],[60,1,4],[65,1,4],[70,2,3],[75,1,3],[80,2,3],[85,1,2],[90,1,2]]},
+      {n:'Snatch Pull',          k:'sp', b:[[85,2,3],[90,2,3]]},
+    ]
+  ]},
+  // ── WEEK 4 ── Macrocycle I | Mesocycle I | Microcycle IV (Peak Week 1)
+  {phase:'Macrocycle I · Mesocycle I · Microcycle IV', days:[
+    [
+      {n:'Power Snatch',         k:'s',  b:[[65,1,3],[70,2,3],[75,1,3],[80,1,3],[83,1,3]]},
+      {n:'P. Clean + 3 P. Jerks',k:'c',  b:[[65,1,1],[70,2,1],[75,2,1],[80,1,1],[83,1,1]], cx:'1 Power Clean + 3 Power Jerks per set'},
+      {n:'Back Squat',           k:'b',  b:[[60,1,5],[65,2,5],[70,1,5],[75,1,3],[80,1,3],[83,1,3]]},
+      {n:'Snatch Pull',          k:'sp', b:[[85,2,3],[90,2,3]]},
+      {n:'Ab Work',              k:'-',  b:[]},
+      {n:'Light Jog (15 min)',   k:'-',  b:[]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[65,1,3],[70,1,3],[75,1,3],[80,1,3],[83,1,3]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[65,1,3],[70,1,3],[75,1,3],[80,1,3],[85,1,3]]},
+      {n:'Front Squat',          k:'f',  b:[[70,2,5],[75,2,5],[80,1,4],[85,2,3]]},
+      {n:'Ab Work',              k:'-',  b:[]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[65,1,3],[70,2,3],[75,1,3],[80,1,3],[85,1,3],[90,1,1],[92,1,1]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[60,1,3],[65,1,3],[70,1,3],[75,1,3],[80,1,3],[85,1,2],[90,1,1]]},
+      {n:'Back Squat',           k:'b',  b:[[60,1,4],[65,1,4],[70,1,4],[75,1,4],[80,1,3],[85,1,3],[90,1,3],[92,1,1],[95,1,1]]},
+      {n:'Snatch Pull',          k:'sp', b:[[85,2,3],[90,2,3]]},
+    ]
+  ]},
+  // ── WEEK 5 ── Macrocycle I | Mesocycle II | Microcycle I
+  {phase:'Macrocycle I · Mesocycle II · Microcycle I', days:[
+    [
+      {n:'Power Snatch',         k:'s',  b:[[60,2,3],[65,1,3],[70,1,3],[75,1,3],[80,2,3]]},
+      {n:'P. Clean + 3 P. Jerks',k:'c',  b:[[65,2,1],[70,2,1],[75,2,1],[80,2,1]], cx:'1 Power Clean + 3 Power Jerks per set'},
+      {n:'Back Squats',          k:'b',  b:[[60,3,5],[65,2,5],[70,1,4],[75,1,3],[80,1,3],[83,1,3]]},
+      {n:'Snatch Pull',          k:'sp', b:[[85,2,3],[90,2,3]]},
+      {n:'Ab Work',              k:'-',  b:[]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[65,1,3],[70,1,3],[75,1,3],[80,1,3],[85,1,3],[90,2,1]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[65,1,3],[70,1,3],[80,1,3],[85,1,3],[90,2,2]]},
+      {n:'Front Squat',          k:'f',  b:[[70,2,4],[75,2,4],[80,1,4],[85,2,3]]},
+      {n:'Ab Work',              k:'-',  b:[]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[60,1,3],[65,2,3],[70,1,3],[75,1,3],[80,1,3],[87,1,1],[95,2,1]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[60,1,3],[65,2,3],[70,1,3],[75,1,3],[80,2,3],[87,1,1],[95,2,1]]},
+      {n:'Back Squats',          k:'b',  b:[[60,3,5],[65,2,5],[70,1,3],[75,1,2],[80,1,2],[85,1,2],[90,1,1],[95,2,1]]},
+      {n:'Snatch Pull',          k:'sp', b:[[85,2,3],[90,2,3]]},
+    ]
+  ]},
+  // ── WEEK 6 ── Macrocycle I | Mesocycle II | Microcycle II
+  {phase:'Macrocycle I · Mesocycle II · Microcycle II', days:[
+    [
+      {n:'Power Snatch',         k:'s',  b:[[70,2,3],[75,1,3],[80,1,3],[83,2,3]]},
+      {n:'P. Clean + 3 P. Jerks',k:'c',  b:[[60,1,1],[65,1,1],[70,1,1],[80,1,1]], cx:'1 Power Clean + 3 Power Jerks per set'},
+      {n:'Back Squat',           k:'b',  b:[[60,1,5],[65,1,5],[70,1,5],[75,1,3],[80,1,3],[83,3,2]]},
+      {n:'Snatch Pull',          k:'sp', b:[[85,2,3],[90,2,3]]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[70,2,3],[75,1,3],[80,1,3],[83,1,3]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[70,2,3],[75,1,3],[80,1,3],[83,1,3]]},
+      {n:'Back Squat',           k:'b',  b:[[60,1,5],[65,1,5],[70,1,5],[75,2,3],[80,2,3]]},
+      {n:'Snatch Pull',          k:'sp', b:[[85,2,3],[90,2,3]]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[65,1,3],[70,2,3],[75,1,3],[80,1,3],[85,1,2],[90,1,2]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[65,1,3],[70,2,3],[75,1,3],[80,1,2],[85,1,2],[90,1,2],[95,1,1],[97,1,1]]},
+      {n:'Back Squat',           k:'b',  b:[[50,1,4],[55,1,4],[60,1,4],[65,1,4],[70,1,3],[75,1,3],[80,1,3],[85,1,2],[90,1,1],[95,1,1],[100,1,1]]},
+      {n:'Snatch Pull',          k:'sp', b:[[85,2,3],[90,2,3]]},
+    ]
+  ]},
+  // ── WEEK 7 ── Macrocycle I | Mesocycle II | Microcycle III
+  {phase:'Macrocycle I · Mesocycle II · Microcycle III', days:[
+    [
+      {n:'Hang Snatch',          k:'s',  b:[[60,2,3],[65,1,3],[70,1,3],[75,3,3]]},
+      {n:'P. Clean + 3 P. Jerks',k:'c',  b:[[55,1,1],[60,1,1],[65,1,1],[75,1,1],[80,1,1],[85,2,1]], cx:'1 Power Clean + 3 Power Jerks per set'},
+      {n:'Back Squat',           k:'b',  b:[[60,1,5],[65,1,5],[70,1,5],[75,1,4],[80,1,4],[83,2,3]]},
+      {n:'Snatch Pull',          k:'sp', b:[[90,2,3],[95,2,3]]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[70,2,3],[75,1,3],[80,1,3],[83,1,3]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[70,2,3],[75,1,3],[80,1,3],[83,1,3]]},
+      {n:'Back Squat',           k:'b',  b:[[60,1,5],[65,2,5],[70,1,5],[75,2,3],[80,2,3]]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[65,1,3],[70,1,3],[75,1,3],[87,1,3],[85,1,2],[90,1,1],[95,1,1],[100,1,1]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[65,1,3],[70,1,3],[75,1,3],[87,1,3],[85,1,2],[90,1,1]]},
+    ]
+  ]},
+  // ── WEEK 8 ── Macrocycle I | Mesocycle II | Microcycle IV (Peak Week 2)
+  {phase:'Macrocycle I · Mesocycle II · Microcycle IV', days:[
+    [
+      {n:'Power Snatch',         k:'s',  b:[[70,2,3],[75,1,3],[80,1,3],[83,3,3]]},
+      {n:'P. Clean + 3 P. Jerks',k:'c',  b:[[60,1,1],[65,2,1],[70,1,1],[75,1,1],[80,2,1]], cx:'1 Power Clean + 3 Power Jerks per set'},
+      {n:'Back Squat',           k:'b',  b:[[60,1,5],[65,1,5],[70,1,5],[75,1,3],[80,1,3],[85,1,3],[87,2,3]]},
+      {n:'Snatch Pull',          k:'sp', b:[[90,2,3],[95,2,3]]},
+    ],[
+      {n:'Hang P. Snatch',       k:'s',  b:[[65,2,3],[70,1,3],[75,1,3],[80,2,3]]},
+      {n:'Jerk Behind Neck',     k:'c',  b:[[70,1,3],[75,1,3],[80,1,3],[85,1,3],[87,1,3]]},
+      {n:'Back Squat',           k:'b',  b:[[60,1,5],[65,1,5],[70,1,3],[75,1,3],[80,2,3]]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[65,1,3],[70,2,3],[75,1,3],[80,1,3],[85,1,2],[90,1,2],[95,1,1]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[50,1,3],[55,2,3],[60,1,3],[65,1,3],[70,1,2],[75,1,2],[80,1,2],[85,1,1],[90,1,1],[100,1,1]]},
+      {n:'Back Squat',           k:'b',  b:[[50,1,4],[55,1,4],[60,1,4],[65,1,4],[70,1,3],[75,1,3],[80,1,3],[85,1,2],[90,1,2],[95,1,1]]},
+      {n:'Snatch Pull',          k:'sp', b:[[90,2,3],[95,2,3]]},
+    ]
+  ]},
+  // ── WEEK 9 ── Macrocycle I | Mesocycle III | Microcycle I
+  {phase:'Macrocycle I · Mesocycle III · Microcycle I', days:[
+    [
+      {n:'Snatch',               k:'s',  b:[[70,2,3],[75,1,3],[80,1,3],[83,3,3]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[70,2,3],[75,1,3],[80,1,3],[83,3,3]]},
+      {n:'Back Squat',           k:'b',  b:[[60,1,5],[65,1,5],[70,1,5],[75,1,3],[80,1,3],[83,2,3]]},
+    ],[
+      {n:'Hang Snatch',          k:'s',  b:[[65,2,3],[70,1,3],[75,3,3]]},
+      {n:'Jerk Behind Neck',     k:'c',  b:[[65,2,3],[70,1,3],[75,2,3]]},
+      {n:'Back Squat',           k:'b',  b:[[60,1,5],[65,1,5],[70,1,4],[75,1,3],[80,2,3]]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[65,1,3],[70,1,3],[75,1,2],[80,1,2],[85,1,2],[90,1,2],[95,1,1],[100,1,1],[105,1,1]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[65,1,3],[70,1,3],[75,1,2],[80,1,2],[85,1,2],[90,1,2],[95,1,1],[100,1,1],[105,1,1]]},
+    ]
+  ]},
+  // ── WEEK 10 ── Macrocycle I | Mesocycle III | Microcycle II
+  {phase:'Macrocycle I · Mesocycle III · Microcycle II', days:[
+    [
+      {n:'Power Snatch',         k:'s',  b:[[60,2,4],[65,3,3],[70,1,3],[75,2,3]]},
+      {n:'P. Clean + 3 P. Jerks',k:'c',  b:[[65,2,1],[70,2,1],[75,2,1],[80,2,1]], cx:'1 Power Clean + 3 Power Jerks per set'},
+      {n:'Back Squats',          k:'b',  b:[[60,2,5],[65,2,5],[70,2,5],[75,2,3],[80,1,3],[83,2,3]]},
+      {n:'Snatch Pull',          k:'sp', b:[[90,2,3],[93,2,3]]},
+    ],[
+      {n:'Power Snatch',         k:'s',  b:[[60,1,3],[65,2,3],[70,1,3],[75,2,3]]},
+      {n:'Jerk Behind Neck',     k:'c',  b:[[60,1,5],[70,1,5],[70,2,3],[75,2,3]]},
+      {n:'Front Squats',         k:'f',  b:[[70,2,5],[75,2,5],[80,2,4],[85,2,4]]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[60,1,3],[65,2,3],[70,1,3],[75,1,3],[80,1,3],[85,1,2],[87,1,1],[90,2,1]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[60,1,3],[65,2,3],[70,1,3],[75,1,3],[80,1,3],[85,1,3],[87,1,2],[90,2,1]]},
+      {n:'Back Squats',          k:'b',  b:[[80,1,3],[85,1,3],[87,1,1],[90,2,2],[95,1,1],[100,1,1]]},
+      {n:'Snatch Pull',          k:'sp', b:[[90,3,3],[93,2,3]]},
+    ]
+  ]},
+  // ── WEEK 11 ── Macrocycle I | Mesocycle III | Microcycle III
+  {phase:'Macrocycle I · Mesocycle III · Microcycle III', days:[
+    [
+      {n:'Power Snatch',         k:'s',  b:[[60,1,4],[65,2,3],[70,1,3],[75,1,3],[80,1,3],[83,2,2]]},
+      {n:'P. Clean + 3 P. Jerks',k:'c',  b:[[65,1,1],[70,3,1],[75,1,1],[78,2,1]], cx:'1 Power Clean + 3 Power Jerks per set'},
+      {n:'Back Squat',           k:'b',  b:[[55,1,5],[60,1,5],[65,2,5],[70,2,3],[75,1,3],[80,1,3],[85,1,3]]},
+      {n:'Snatch Pull',          k:'sp', b:[[90,2,3],[93,2,3]]},
+    ],[
+      {n:'Power Snatch',         k:'s',  b:[[60,1,3],[65,2,3],[70,1,3],[75,2,3]]},
+      {n:'Jerk Behind Neck',     k:'c',  b:[[65,1,5],[70,1,5],[75,2,3],[78,2,3]]},
+      {n:'Front Squat',          k:'f',  b:[[70,1,5],[75,2,5],[80,2,4],[85,1,4],[90,1,2]]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[55,1,3],[60,1,3],[65,1,3],[70,1,3],[75,1,3],[80,1,2],[85,1,1],[92,2,1]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[50,1,3],[55,2,3],[60,1,3],[65,1,3],[70,1,3],[75,1,2],[80,1,1],[85,1,1],[90,2,1]]},
+      {n:'Back Squats',          k:'b',  b:[[45,1,5],[50,1,5],[55,1,5],[60,1,4],[65,1,3],[70,1,3],[75,1,3],[80,1,3],[85,1,2],[90,1,2],[96,1,1]]},
+      {n:'Snatch Pull',          k:'sp', b:[[90,2,3],[93,2,3]]},
+    ]
+  ]},
+  // ── WEEK 12 ── Macrocycle I | Mesocycle III | Microcycle IV — COMPETITION SIMULATION
+  {phase:'Macrocycle I · Mesocycle III · Microcycle IV — Competition Simulation', days:[
+    [
+      {n:'Snatch',               k:'s',  b:[[65,2,3],[70,1,3],[75,1,3],[80,3,3]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[65,2,3],[70,1,3],[75,1,3],[80,3,3]]},
+      {n:'Back Squat',           k:'b',  b:[[55,1,5],[60,1,5],[65,1,4],[70,1,3],[75,1,3],[80,1,3],[85,1,3]]},
+      {n:'Snatch Pull',          k:'sp', b:[[90,2,3],[93,2,3]]},
+    ],[
+      {n:'Hang Snatch',          k:'s',  b:[[65,1,3],[70,1,3],[75,1,3],[80,3,3]]},
+      {n:'Jerk Behind Neck',     k:'c',  b:[[65,1,3],[70,1,3],[75,2,3]]},
+      {n:'Back Squat',           k:'b',  b:[[55,1,5],[60,1,5],[65,1,4],[70,1,3],[75,1,3],[80,1,3]]},
+    ],[
+      {n:'Snatch',               k:'s',  b:[[65,1,3],[70,2,3],[75,1,3],[80,1,2],[85,1,1],[90,1,1],[95,1,1],[100,1,1],[105,1,1]]},
+      {n:'Clean & Jerk',         k:'c',  b:[[65,1,3],[70,2,3],[75,1,3],[80,1,2],[85,1,1],[90,1,1],[95,1,1],[100,1,1],[105,1,1]]},
+    ]
+  ]},
+];
+
+// ═══════════════════════════════════════════════════════════════════
+// STATE & CONFIG
+// ═══════════════════════════════════════════════════════════════════
+let cfg = loadConfig();
+let selectedWeek = 1;
+let selectedDay = null;
+let currentView = 'home';
+
+// Key -> max kg mapping
+function getMax(k) {
+  const m = {s:cfg.snatch, c:cfg.cnj, b:cfg.bsq, f:cfg.fsq, sp:cfg.spull, cp:cfg.cpull};
+  return m[k] || 0;
+}
+
+// Round to nearest 2.5 kg (minimum 20 kg bar)
+function calcKg(maxKg, pct) {
+  const raw = maxKg * pct / 100;
+  return Math.max(20, Math.round(raw / 2.5) * 2.5);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════════════════════
+function loadConfig() {
+  const d = JSON.parse(localStorage.getItem('cfg') || '{}');
+  return {
+    snatch: d.snatch||80, cnj: d.cnj||100, bsq: d.bsq||130,
+    fsq: d.fsq||115, spull: d.spull||100, cpull: d.cpull||120,
+    comp: d.comp||'2026-07-30'
+  };
+}
+function saveConfig(c) { localStorage.setItem('cfg', JSON.stringify(c)); }
+
+function getSessionKey(w,d) { return `sess_w${w}_d${d}`; }
+function loadSession(w,d) { return JSON.parse(localStorage.getItem(getSessionKey(w,d))||'null'); }
+function saveSessionData(w,d,data) { localStorage.setItem(getSessionKey(w,d), JSON.stringify(data)); }
+
+function getBodyweightLog() { return JSON.parse(localStorage.getItem('bwlog')||'[]'); }
+function saveBodyweightLog(log) { localStorage.setItem('bwlog', JSON.stringify(log)); }
+
+// ═══════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════════
+function showView(v) {
+  currentView = v;
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.getElementById('nav-'+v).classList.add('active');
+  if(v==='home') renderHome();
+  if(v==='bodyweight') renderBodyweight();
+  if(v==='report') renderReport();
+  if(v==='settings') renderSettings();
+  if(v==='session') renderSession();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// HOME VIEW
+// ═══════════════════════════════════════════════════════════════════
+function renderHome() {
+  // Week grid
+  const grid = document.getElementById('week-grid');
+  grid.innerHTML = '';
+  const phases = ['MI·MS1','MI·MS1','MI·MS1','MI·MS1','MI·MS2','MI·MS2','MI·MS2','MI·MS2','MI·MS3','MI·MS3','MI·MS3','MI·MS3'];
+  for(let w=1;w<=12;w++) {
+    const done = [1,2,3].every(d=>loadSession(w,d)?.complete);
+    const card = document.createElement('div');
+    card.className = `week-card${w===selectedWeek?' current':''}${done?' done':''}`;
+    card.innerHTML = `<div class="wk-num">W${w}</div><div class="wk-phase">${phases[w-1]}</div><div class="wk-days">${[1,2,3].map(d=>{const s=loadSession(w,d);return s?.complete?'✓':'○';}).join(' ')}</div>`;
+    card.onclick = () => { selectedWeek=w; selectedDay=null; renderHome(); };
+    grid.appendChild(card);
+  }
+  // Day buttons
+  for(let d=1;d<=3;d++) {
+    const btn = document.getElementById(`day-btn-${d}`);
+    const sess = loadSession(selectedWeek, d);
+    btn.classList.toggle('selected', selectedDay===d);
+    btn.classList.toggle('done', !!sess?.complete);
+  }
+  document.getElementById('start-btn').disabled = !selectedDay;
+}
+
+function selectDay(d) {
+  selectedDay = d;
+  renderHome();
+}
+
+function startSession() {
+  if(!selectedDay) return;
+  showView('session');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SESSION VIEW
+// ═══════════════════════════════════════════════════════════════════
+function renderSession() {
+  if(!selectedWeek || !selectedDay) {
+    document.getElementById('exercises-container').innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Go to HOME and select a week and day first.</div></div>';
+    return;
+  }
+  const w = selectedWeek, d = selectedDay;
+  const weekData = PROGRAM[w-1];
+  const dayExercises = weekData.days[d-1];
+  document.getElementById('sh-title').textContent = `WEEK ${w} · DAY ${d}`;
+  document.getElementById('sh-sub').textContent = weekData.phase;
+
+  let sess = loadSession(w,d) || buildEmptySession(w,d);
+  renderExercises(dayExercises, sess, w, d);
+  updateProgress(sess);
+}
+
+function buildEmptySession(w,d) {
+  const dayExercises = PROGRAM[w-1].days[d-1];
+  return {
+    date: new Date().toISOString().slice(0,10),
+    complete: false,
+    exercises: dayExercises.map(ex => ({
+      sets: ex.b.map(b => ({
+        pct: b[0], count: b[1], reps: b[2],
+        attempts: Array(b[1]).fill(null).map(() => Array(b[2]).fill(0)) // 0=pending,1=success,2=fail
+      }))
+    }))
+  };
+}
+
+function renderExercises(dayExercises, sess, w, d) {
+  const container = document.getElementById('exercises-container');
+  container.innerHTML = '';
+  dayExercises.forEach((ex, ei) => {
+    const maxKg = getMax(ex.k);
+    const card = document.createElement('div');
+    card.className = 'exercise-card';
+    let html = `<div class="ex-header">
+      <div class="ex-name">${ex.n}</div>
+      ${maxKg>0?`<div class="ex-max-badge">MAX ${maxKg}kg</div>`:''}</div>`;
+    if(ex.cx) html += `<div class="ex-complex-note">⚡ ${ex.cx}</div>`;
+    if(ex.b.length===0) {
+      html += `<div style="padding:12px 14px;font-size:12px;color:var(--text3)">— General conditioning, no barbell work —</div>`;
+    } else {
+      const sessEx = sess.exercises[ei];
+      ex.b.forEach((b, bi) => {
+        const [pct, numSets, repsPerSet] = b;
+        const kg = maxKg>0 ? calcKg(maxKg, pct) : 0;
+        const attempts = sessEx?.sets[bi]?.attempts || Array(numSets).fill(null).map(()=>Array(repsPerSet).fill(0));
+        html += `<div class="set-block">
+          <div class="set-info">
+            <div class="set-weight">${kg>0?kg+'kg':'—'}</div>
+            <div style="flex:1">
+              <div style="font-family:var(--font-mono);font-size:13px;color:var(--yellow)">${pct}%</div>
+              <div class="sets-reps">${numSets} set${numSets>1?'s':''} × ${repsPerSet} rep${repsPerSet>1?'s':''}</div>
+            </div>
+          </div>`;
+        for(let si=0;si<numSets;si++) {
+          if(numSets>1) html += `<div style="font-size:10px;color:var(--text3);margin-bottom:4px">Set ${si+1}</div>`;
+          html += `<div class="rep-toggles">`;
+          for(let ri=0;ri<repsPerSet;ri++) {
+            const status = attempts[si]?.[ri]||0;
+            const cls = status===1?'success':status===2?'fail':'';
+            const icon = status===1?'✓':status===2?'✗':'•';
+            html += `<button class="rep-toggle ${cls}" onclick="toggleRep(${w},${d},${ei},${bi},${si},${ri})" id="rep-${w}-${d}-${ei}-${bi}-${si}-${ri}">${icon}</button>`;
+          }
+          html += `</div>`;
+          if(si<numSets-1) html += `<div style="height:8px"></div>`;
+        }
+        html += `</div>`;
+      });
+    }
+    card.innerHTML = html;
+    container.appendChild(card);
+  });
+}
+
+function toggleRep(w,d,ei,bi,si,ri) {
+  let sess = loadSession(w,d) || buildEmptySession(w,d);
+  if(!sess.exercises[ei]?.sets[bi]) return;
+  const cur = sess.exercises[ei].sets[bi].attempts[si][ri];
+  sess.exercises[ei].sets[bi].attempts[si][ri] = cur===0?1:cur===1?2:0;
+  saveSessionData(w,d,sess);
+  // Update just this button
+  const btn = document.getElementById(`rep-${w}-${d}-${ei}-${bi}-${si}-${ri}`);
+  if(btn) {
+    const nv = sess.exercises[ei].sets[bi].attempts[si][ri];
+    btn.className = `rep-toggle ${nv===1?'success':nv===2?'fail':''}`;
+    btn.textContent = nv===1?'✓':nv===2?'✗':'•';
+  }
+  updateProgress(sess);
+}
+
+function updateProgress(sess) {
+  let total=0, done=0;
+  (sess.exercises||[]).forEach(ex=>{
+    (ex.sets||[]).forEach(s=>{
+      (s.attempts||[]).forEach(setArr=>{
+        (setArr||[]).forEach(r=>{ total++; if(r!==0) done++; });
+      });
+    });
+  });
+  const pct = total>0?Math.round(done/total*100):0;
+  document.getElementById('session-progress-bar').style.width = pct+'%';
+}
+
+function finishSession() {
+  let sess = loadSession(selectedWeek, selectedDay) || buildEmptySession(selectedWeek, selectedDay);
+  sess.complete = true;
+  sess.date = new Date().toISOString().slice(0,10);
+  saveSessionData(selectedWeek, selectedDay, sess);
+  toast('✓ Session saved!');
+  renderHome();
+  setTimeout(()=>showView('home'), 800);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// BODYWEIGHT VIEW
+// ═══════════════════════════════════════════════════════════════════
+function renderBodyweight() {
+  const log = getBodyweightLog();
+  const logEl = document.getElementById('bw-log');
+  if(log.length===0) {
+    logEl.innerHTML = '<div class="empty-state"><div class="empty-icon">⚖️</div><div class="empty-text">No bodyweight entries yet.<br>Log your weight daily.</div></div>';
+    return;
+  }
+  logEl.innerHTML = [...log].reverse().map((e,i)=>{
+    const actual = log.length-1-i;
+    const prev = log[actual-1];
+    const diff = prev ? (e.w - prev.w) : null;
+    const diffStr = diff!==null ? `<span style="color:${diff>0?'var(--red2)':diff<0?'var(--green2)':'var(--text3)';}">${diff>0?'+':''}${diff.toFixed(1)}</span>` : '';
+    return `<div class="bw-entry">
+      <div><div class="bw-entry-date">${e.date}</div><div style="font-size:10px;color:var(--text3)">${diffStr} kg</div></div>
+      <div class="bw-entry-weight">${e.w.toFixed(1)}<span style="font-size:12px;color:var(--text3)">kg</span></div>
+      <button class="bw-entry-del" onclick="deleteBodyweight(${actual})">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+function saveBodyweight() {
+  const input = document.getElementById('bw-input');
+  const w = parseFloat(input.value);
+  if(!w||w<20||w>300) { toast('Invalid weight'); return; }
+  const log = getBodyweightLog();
+  const today = new Date().toISOString().slice(0,10);
+  const existing = log.findIndex(e=>e.date===today);
+  if(existing>=0) log[existing].w = w;
+  else log.push({date:today, w});
+  log.sort((a,b)=>a.date.localeCompare(b.date));
+  saveBodyweightLog(log);
+  input.value = '';
+  renderBodyweight();
+  toast('Bodyweight logged!');
+}
+
+function deleteBodyweight(i) {
+  const log = getBodyweightLog();
+  log.splice(i,1);
+  saveBodyweightLog(log);
+  renderBodyweight();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// REPORT VIEW
+// ═══════════════════════════════════════════════════════════════════
+let reportWeek = 1;
+
+function renderReport() {
+  // Week selector
+  const sel = document.getElementById('report-week-select');
+  sel.innerHTML = '<span style="font-size:12px;color:var(--text2);align-self:center">Week:</span>';
+  for(let w=1;w<=12;w++) {
+    const btn = document.createElement('button');
+    btn.className = `report-week-btn${w===reportWeek?' active':''}`;
+    btn.textContent = w;
+    btn.onclick = () => { reportWeek=w; renderReport(); };
+    sel.appendChild(btn);
+  }
+  generateReport(reportWeek);
+}
+
+function generateReport(w) {
+  const content = document.getElementById('report-content');
+  const sessions = [1,2,3].map(d=>loadSession(w,d));
+  const completedCount = sessions.filter(s=>s?.complete).length;
+
+  let html = '';
+
+  if(completedCount===0) {
+    html = `<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">No completed sessions for Week ${w} yet.<br>Complete training days to see your report.</div></div>`;
+    content.innerHTML = html;
+    return;
+  }
+
+  // Calculate stats per exercise across the week
+  let totalAttempts=0, totalSuccess=0, totalFail=0;
+  let exerciseStats = {};
+
+  sessions.forEach((sess,di)=>{
+    if(!sess) return;
+    const dayExercises = PROGRAM[w-1].days[di];
+    (sess.exercises||[]).forEach((ex,ei)=>{
+      const exName = dayExercises[ei]?.n || 'Exercise';
+      if(!exerciseStats[exName]) exerciseStats[exName]={succ:0,fail:0,total:0};
+      (ex.sets||[]).forEach(s=>{
+        (s.attempts||[]).forEach(setArr=>{
+          (setArr||[]).forEach(r=>{
+            if(r===1){exerciseStats[exName].succ++;exerciseStats[exName].total++;totalSuccess++;totalAttempts++;}
+            else if(r===2){exerciseStats[exName].fail++;exerciseStats[exName].total++;totalFail++;totalAttempts++;}
+            else if(r===0&&sess.complete){exerciseStats[exName].total++;totalAttempts++;}
+          });
+        });
+      });
+    });
+  });
+
+  const overallRate = totalAttempts>0?Math.round(totalSuccess/totalAttempts*100):0;
+  const missRate = totalAttempts>0?Math.round(totalFail/totalAttempts*100):0;
+
+  if(missRate>10) {
+    html += `<div class="miss-alert"><strong>⚠️ HIGH MISS RATE — ${missRate}% missed</strong>Per Soviet system: if missing &gt;10% of lifts, first lower intensity by a few percent before touching volume. Review technique and recovery.</div>`;
+  }
+
+  // Overall summary card
+  html += `<div class="report-card">
+    <div class="report-title">WEEK ${w} SUMMARY</div>
+    <div class="report-row">
+      <div class="report-label">Days Completed</div>
+      <div class="report-value ${completedCount===3?'good':completedCount>0?'warn':'bad'}">${completedCount}/3</div>
+    </div>
+    <div class="report-row">
+      <div class="report-label">Overall Success Rate</div>
+      <div class="report-value ${overallRate>=90?'good':overallRate>=80?'warn':'bad'}">${overallRate}%</div>
+    </div>
+    <div style="margin-top:8px">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill ${overallRate>=90?'fill-green':overallRate>=80?'fill-yellow':'fill-red'}" style="width:${overallRate}%"></div>
+      </div>
+    </div>
+    <div class="report-row" style="margin-top:8px">
+      <div class="report-label">Successful Lifts</div>
+      <div class="report-value good">${totalSuccess}</div>
+    </div>
+    <div class="report-row">
+      <div class="report-label">Missed Lifts</div>
+      <div class="report-value ${totalFail>0?'bad':'good'}">${totalFail}</div>
+    </div>
+  </div>`;
+
+  // Per-exercise breakdown
+  if(Object.keys(exerciseStats).length>0) {
+    html += `<div class="report-card"><div class="report-title">BY EXERCISE</div>`;
+    Object.entries(exerciseStats).forEach(([name, stats])=>{
+      if(stats.total===0) return;
+      const rate = Math.round(stats.succ/stats.total*100);
+      html += `<div class="report-row">
+        <div>
+          <div class="report-label">${name}</div>
+          <div class="progress-bar-wrap" style="width:120px;margin-top:3px">
+            <div class="progress-bar-fill ${rate>=90?'fill-green':rate>=80?'fill-yellow':'fill-red'}" style="width:${rate}%"></div>
+          </div>
+        </div>
+        <div class="report-value ${rate>=90?'good':rate>=80?'warn':'bad'}">${rate}%<span style="font-size:10px;color:var(--text3);margin-left:4px">${stats.succ}/${stats.total}</span></div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Bodyweight for this week
+  const bwLog = getBodyweightLog();
+  const weekStart = new Date(cfg.comp);
+  weekStart.setDate(weekStart.getDate() - (13-w)*7);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate()+7);
+  const weekBW = bwLog.filter(e=>{const d=new Date(e.date);return d>=weekStart&&d<=weekEnd;});
+  if(weekBW.length>0) {
+    const avgBW = weekBW.reduce((a,e)=>a+e.w,0)/weekBW.length;
+    html += `<div class="report-card"><div class="report-title">BODYWEIGHT</div>
+      <div class="report-row"><div class="report-label">Avg this week</div><div class="report-value">${avgBW.toFixed(1)} kg</div></div>
+      <div class="report-row"><div class="report-label">Entries logged</div><div class="report-value">${weekBW.length}</div></div>
+    </div>`;
+  }
+
+  // Soviet system advice
+  html += `<div class="report-card">
+    <div class="report-title">COACH NOTES</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.8">
+      ${overallRate>=90?'✅ Excellent success rate. Maintain current loading.':''}
+      ${overallRate>=80&&overallRate<90?'⚠️ Good but below 90%. Monitor recovery and technique.':''}
+      ${overallRate<80?'🔴 Miss rate too high. Drop intensity 5% before dropping volume.':''}
+      <br>💡 <em>"Always lower intensity before lowering volume." — Soviet System</em>
+    </div>
+  </div>`;
+
+  content.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════════════
+function renderSettings() {
+  document.getElementById('set-snatch').value = cfg.snatch;
+  document.getElementById('set-cnj').value = cfg.cnj;
+  document.getElementById('set-bsq').value = cfg.bsq;
+  document.getElementById('set-fsq').value = cfg.fsq;
+  document.getElementById('set-spull').value = cfg.spull;
+  document.getElementById('set-cpull').value = cfg.cpull;
+  document.getElementById('set-comp').value = cfg.comp;
+}
+
+function saveSettings() {
+  cfg = {
+    snatch: parseFloat(document.getElementById('set-snatch').value)||80,
+    cnj:    parseFloat(document.getElementById('set-cnj').value)||100,
+    bsq:    parseFloat(document.getElementById('set-bsq').value)||130,
+    fsq:    parseFloat(document.getElementById('set-fsq').value)||115,
+    spull:  parseFloat(document.getElementById('set-spull').value)||100,
+    cpull:  parseFloat(document.getElementById('set-cpull').value)||120,
+    comp:   document.getElementById('set-comp').value||'2026-07-30',
+  };
+  saveConfig(cfg);
+  updateCountdown();
+  toast('Settings saved!');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// COUNTDOWN
+// ═══════════════════════════════════════════════════════════════════
+function updateCountdown() {
+  const comp = new Date(cfg.comp);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  comp.setHours(0,0,0,0);
+  const diff = Math.ceil((comp-today)/(1000*60*60*24));
+  document.getElementById('days-left').textContent = diff>0?diff:'0';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════════
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+function init() {
+  cfg = loadConfig();
+  updateCountdown();
+  renderHome();
+  // Register service worker
+  if('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }
+}
+
+init();
+</script>
+</body>
+</html>
