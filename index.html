@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -31,10 +30,12 @@
   --font-body: 'Barlow', sans-serif;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+/* Added touch-action to prevent 300ms tap delay on mobile */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-body); }
 
-#app { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+/* Added 100vh fallback for older mobile browsers before 100dvh */
+#app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
 
 /* ── HEADER ── */
 #header {
@@ -248,15 +249,6 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .empty-icon { font-size: 48px; margin-bottom: 12px; }
 .empty-text { font-size: 14px; line-height: 1.6; }
 
-.pill {
-  display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px;
-  font-weight: 600; letter-spacing: 0.5px;
-}
-.pill-red { background: #2e0d0d; color: var(--red2); }
-.pill-green { background: #0d2e1a; color: var(--green2); }
-.pill-yellow { background: #2e2200; color: var(--yellow); }
-
-/* Progress bar for success rate */
 .progress-bar-wrap { background: var(--bg3); border-radius: 4px; height: 8px; overflow: hidden; margin-top: 4px; }
 .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
 .fill-green { background: var(--green); }
@@ -274,24 +266,6 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap;
 }
 #toast.show { opacity: 1; }
-
-/* Modal overlay */
-#modal {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-  z-index: 100; align-items: flex-end;
-}
-#modal.show { display: flex; }
-#modal-box {
-  width: 100%; max-height: 70vh; overflow-y: auto;
-  background: var(--bg2); border-top: 2px solid var(--red);
-  border-radius: 16px 16px 0 0; padding: 20px 16px 40px;
-}
-#modal-title { font-family: var(--font-head); font-size: 22px; letter-spacing: 2px; color: var(--red); margin-bottom: 16px; }
-
-.about-row { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-.about-row:last-child { border-bottom: none; }
-.about-label { color: var(--text2); font-size: 11px; margin-bottom: 2px; }
-
 </style>
 </head>
 <body>
@@ -350,7 +324,8 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
     <div class="view" id="view-bodyweight">
       <p class="section-title">LOG BODYWEIGHT</p>
       <div class="bw-input-row">
-        <input class="bw-input" type="number" id="bw-input" placeholder="00.0" step="0.1" min="40" max="200">
+        <!-- Added inputmode="decimal" for mobile keypads -->
+        <input class="bw-input" type="number" inputmode="decimal" id="bw-input" placeholder="00.0" step="0.1" min="40" max="200">
         <button class="bw-save-btn" onclick="saveBodyweight()">LOG</button>
       </div>
       <p class="section-title">HISTORY</p>
@@ -372,27 +347,27 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
         <p class="settings-title">YOUR MAXES (1RM)</p>
         <div class="setting-row">
           <div><div class="setting-label">Snatch</div><div class="setting-sub">Used for: snatch, power snatch, hang snatch, pull variants</div></div>
-          <input class="setting-input" type="number" id="set-snatch" value="80"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
+          <input class="setting-input" type="number" inputmode="numeric" id="set-snatch" value="80"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
         </div>
         <div class="setting-row">
           <div><div class="setting-label">Clean & Jerk</div><div class="setting-sub">Used for: C&J, PC+PJ, jerk behind neck</div></div>
-          <input class="setting-input" type="number" id="set-cnj" value="100"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
+          <input class="setting-input" type="number" inputmode="numeric" id="set-cnj" value="100"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
         </div>
         <div class="setting-row">
           <div><div class="setting-label">Back Squat</div></div>
-          <input class="setting-input" type="number" id="set-bsq" value="130"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
+          <input class="setting-input" type="number" inputmode="numeric" id="set-bsq" value="130"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
         </div>
         <div class="setting-row">
           <div><div class="setting-label">Front Squat</div></div>
-          <input class="setting-input" type="number" id="set-fsq" value="115"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
+          <input class="setting-input" type="number" inputmode="numeric" id="set-fsq" value="115"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
         </div>
         <div class="setting-row">
           <div><div class="setting-label">Snatch Pull</div><div class="setting-sub">Used for all snatch pulls</div></div>
-          <input class="setting-input" type="number" id="set-spull" value="100"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
+          <input class="setting-input" type="number" inputmode="numeric" id="set-spull" value="100"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
         </div>
         <div class="setting-row">
           <div><div class="setting-label">Clean Pull</div><div class="setting-sub">Used for all clean pulls</div></div>
-          <input class="setting-input" type="number" id="set-cpull" value="120"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
+          <input class="setting-input" type="number" inputmode="numeric" id="set-cpull" value="120"> <span style="font-size:11px;color:var(--text3);margin-left:4px">kg</span>
         </div>
       </div>
       <div class="settings-section">
@@ -416,8 +391,6 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // PROGRAM DATA — 12-Week 3-Day Soviet System
-// Format: [exerciseName, maxKey, [[pct,sets,reps], ...], complexNote?]
-// maxKey: 's'=snatch, 'c'=cnj, 'b'=bsq, 'f'=fsq, 'sp'=spull, 'cp'=cpull, '-'=none
 // ═══════════════════════════════════════════════════════════════════
 const PROGRAM = [
   // ── WEEK 1 ── Macrocycle I | Mesocycle I | Microcycle I
@@ -640,6 +613,27 @@ const PROGRAM = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════
+// HELPER UTILITIES (Added for Mobile Support)
+// ═══════════════════════════════════════════════════════════════════
+
+// Safely parse YYYY-MM-DD for iOS Safari
+function parseDate(str) {
+  if (!str) return new Date();
+  const parts = str.split('-');
+  if (parts.length === 3) {
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+  return new Date(str);
+}
+
+// Get the correct local YYYY-MM-DD string (prevents timezone offset bugs)
+function getLocalDateStr() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0,10);
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // STATE & CONFIG
 // ═══════════════════════════════════════════════════════════════════
 let cfg = loadConfig();
@@ -647,13 +641,11 @@ let selectedWeek = 1;
 let selectedDay = null;
 let currentView = 'home';
 
-// Key -> max kg mapping
 function getMax(k) {
   const m = {s:cfg.snatch, c:cfg.cnj, b:cfg.bsq, f:cfg.fsq, sp:cfg.spull, cp:cfg.cpull};
   return m[k] || 0;
 }
 
-// Round to nearest 2.5 kg (minimum 20 kg bar)
 function calcKg(maxKg, pct) {
   const raw = maxKg * pct / 100;
   return Math.max(20, Math.round(raw / 2.5) * 2.5);
@@ -699,7 +691,6 @@ function showView(v) {
 // HOME VIEW
 // ═══════════════════════════════════════════════════════════════════
 function renderHome() {
-  // Week grid
   const grid = document.getElementById('week-grid');
   grid.innerHTML = '';
   const phases = ['MI·MS1','MI·MS1','MI·MS1','MI·MS1','MI·MS2','MI·MS2','MI·MS2','MI·MS2','MI·MS3','MI·MS3','MI·MS3','MI·MS3'];
@@ -711,7 +702,6 @@ function renderHome() {
     card.onclick = () => { selectedWeek=w; selectedDay=null; renderHome(); };
     grid.appendChild(card);
   }
-  // Day buttons
   for(let d=1;d<=3;d++) {
     const btn = document.getElementById(`day-btn-${d}`);
     const sess = loadSession(selectedWeek, d);
@@ -753,12 +743,12 @@ function renderSession() {
 function buildEmptySession(w,d) {
   const dayExercises = PROGRAM[w-1].days[d-1];
   return {
-    date: new Date().toISOString().slice(0,10),
+    date: getLocalDateStr(),
     complete: false,
     exercises: dayExercises.map(ex => ({
       sets: ex.b.map(b => ({
         pct: b[0], count: b[1], reps: b[2],
-        attempts: Array(b[1]).fill(null).map(() => Array(b[2]).fill(0)) // 0=pending,1=success,2=fail
+        attempts: Array(b[1]).fill(null).map(() => Array(b[2]).fill(0))
       }))
     }))
   };
@@ -817,7 +807,6 @@ function toggleRep(w,d,ei,bi,si,ri) {
   const cur = sess.exercises[ei].sets[bi].attempts[si][ri];
   sess.exercises[ei].sets[bi].attempts[si][ri] = cur===0?1:cur===1?2:0;
   saveSessionData(w,d,sess);
-  // Update just this button
   const btn = document.getElementById(`rep-${w}-${d}-${ei}-${bi}-${si}-${ri}`);
   if(btn) {
     const nv = sess.exercises[ei].sets[bi].attempts[si][ri];
@@ -843,7 +832,7 @@ function updateProgress(sess) {
 function finishSession() {
   let sess = loadSession(selectedWeek, selectedDay) || buildEmptySession(selectedWeek, selectedDay);
   sess.complete = true;
-  sess.date = new Date().toISOString().slice(0,10);
+  sess.date = getLocalDateStr();
   saveSessionData(selectedWeek, selectedDay, sess);
   toast('✓ Session saved!');
   renderHome();
@@ -878,7 +867,7 @@ function saveBodyweight() {
   const w = parseFloat(input.value);
   if(!w||w<20||w>300) { toast('Invalid weight'); return; }
   const log = getBodyweightLog();
-  const today = new Date().toISOString().slice(0,10);
+  const today = getLocalDateStr();
   const existing = log.findIndex(e=>e.date===today);
   if(existing>=0) log[existing].w = w;
   else log.push({date:today, w});
@@ -902,7 +891,6 @@ function deleteBodyweight(i) {
 let reportWeek = 1;
 
 function renderReport() {
-  // Week selector
   const sel = document.getElementById('report-week-select');
   sel.innerHTML = '<span style="font-size:12px;color:var(--text2);align-self:center">Week:</span>';
   for(let w=1;w<=12;w++) {
@@ -928,7 +916,6 @@ function generateReport(w) {
     return;
   }
 
-  // Calculate stats per exercise across the week
   let totalAttempts=0, totalSuccess=0, totalFail=0;
   let exerciseStats = {};
 
@@ -957,7 +944,6 @@ function generateReport(w) {
     html += `<div class="miss-alert"><strong>⚠️ HIGH MISS RATE — ${missRate}% missed</strong>Per Soviet system: if missing &gt;10% of lifts, first lower intensity by a few percent before touching volume. Review technique and recovery.</div>`;
   }
 
-  // Overall summary card
   html += `<div class="report-card">
     <div class="report-title">WEEK ${w} SUMMARY</div>
     <div class="report-row">
@@ -983,7 +969,6 @@ function generateReport(w) {
     </div>
   </div>`;
 
-  // Per-exercise breakdown
   if(Object.keys(exerciseStats).length>0) {
     html += `<div class="report-card"><div class="report-title">BY EXERCISE</div>`;
     Object.entries(exerciseStats).forEach(([name, stats])=>{
@@ -1002,13 +987,13 @@ function generateReport(w) {
     html += `</div>`;
   }
 
-  // Bodyweight for this week
   const bwLog = getBodyweightLog();
-  const weekStart = new Date(cfg.comp);
+  const weekStart = parseDate(cfg.comp);
   weekStart.setDate(weekStart.getDate() - (13-w)*7);
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekEnd.getDate()+7);
-  const weekBW = bwLog.filter(e=>{const d=new Date(e.date);return d>=weekStart&&d<=weekEnd;});
+  const weekBW = bwLog.filter(e=>{const d=parseDate(e.date);return d>=weekStart&&d<=weekEnd;});
+  
   if(weekBW.length>0) {
     const avgBW = weekBW.reduce((a,e)=>a+e.w,0)/weekBW.length;
     html += `<div class="report-card"><div class="report-title">BODYWEIGHT</div>
@@ -1017,7 +1002,6 @@ function generateReport(w) {
     </div>`;
   }
 
-  // Soviet system advice
   html += `<div class="report-card">
     <div class="report-title">COACH NOTES</div>
     <div style="font-size:12px;color:var(--text2);line-height:1.8">
@@ -1063,7 +1047,7 @@ function saveSettings() {
 // COUNTDOWN
 // ═══════════════════════════════════════════════════════════════════
 function updateCountdown() {
-  const comp = new Date(cfg.comp);
+  const comp = parseDate(cfg.comp);
   const today = new Date();
   today.setHours(0,0,0,0);
   comp.setHours(0,0,0,0);
@@ -1090,22 +1074,11 @@ function init() {
   cfg = loadConfig();
   updateCountdown();
   renderHome();
-  // Register service worker
   if('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(()=>{});
   }
 }
-// ===============================
-// FIX: Make functions global for HTML onclick
-// ===============================
-window.showView = showView;
-window.selectDay = selectDay;
-window.startSession = startSession;
-window.toggleRep = toggleRep;
-window.saveBodyweight = saveBodyweight;
-window.deleteBodyweight = deleteBodyweight;
-window.saveSettings = saveSettings;
-window.finishSession = finishSession;
+
 init();
 </script>
 </body>
