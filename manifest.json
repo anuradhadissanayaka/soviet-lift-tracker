@@ -1,15 +1,20 @@
 {
-  "name": "Soviet Lift Tracker",
-  "short_name": "LiftTracker",
-  "start_url": ".",
+  "name": "Soviet Lifting Tracker",
+  "short_name": "SovietLift",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0a0a0a",
-  "theme_color": "#cc0000",
+  "theme_color": "#0a0a0a",
   "icons": [
     {
-      "src": "icon.png",
+      "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
     }
   ]
 }
