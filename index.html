@@ -1095,7 +1095,17 @@ function init() {
     navigator.serviceWorker.register('./sw.js').catch(()=>{});
   }
 }
-
+// ===============================
+// FIX: Make functions global for HTML onclick
+// ===============================
+window.showView = showView;
+window.selectDay = selectDay;
+window.startSession = startSession;
+window.toggleRep = toggleRep;
+window.saveBodyweight = saveBodyweight;
+window.deleteBodyweight = deleteBodyweight;
+window.saveSettings = saveSettings;
+window.finishSession = finishSession;
 init();
 </script>
 </body>
